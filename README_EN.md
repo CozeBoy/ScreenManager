@@ -12,6 +12,8 @@ A macOS menu bar utility for finding processes that prevent the display or Mac f
 
 Download and open the [Screen Manager DMG](build/屏幕管理.dmg). Drag **Screen Manager** onto the **Applications** shortcut in the mounted image. Open the app, then click its display icon in the menu bar.
 
+Older releases and regular Actions artifacts are not Developer ID signed or notarized. If macOS says the app is damaged, right-click **Screen Manager** in Applications and choose **Open**. If it still won’t open, run `xattr -dr com.apple.quarantine "/Applications/屏幕管理.app"` in Terminal, then launch it again. Official GitHub Releases require the repository signing secrets; future releases will be notarized by Apple.
+
 ## Features
 
 - **View wake sources:** Reads macOS power assertions every 8 seconds. Processes that prevent display sleep and system idle sleep are listed separately with their PIDs and assertion reasons.

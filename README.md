@@ -15,6 +15,8 @@ macOS 菜单栏工具：查看哪些进程阻止显示器熄灭或电脑自动�
 
 下载并打开 [屏幕管理 DMG](build/屏幕管理.dmg)，将“屏幕管理”拖到镜像中的 **Applications** 图标。打开应用后，可从菜单栏的显示器图标进入主界面。
 
+旧版或 Actions 普通构建产物尚未经过 Developer ID 签名和 Apple 公证。若 macOS 提示应用已损坏，可在“应用程序”中对“屏幕管理”点右键并选择“打开”；仍无法打开时，在终端运行 `xattr -dr com.apple.quarantine "/Applications/屏幕管理.app"` 后再启动。正式 GitHub Release 需完成仓库签名 Secrets 配置，之后发布的 DMG 会由 Apple 公证。
+
 ## 功能
 
 - **查看唤醒来源**：每 8 秒读取 macOS 电源断言，分别列出阻止显示器熄灭和阻止电脑空闲睡眠的进程，并显示 PID 和断言用途。

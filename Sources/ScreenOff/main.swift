@@ -1160,21 +1160,21 @@ private struct ProcessInformationView: View {
 }
 
 @MainActor
+@main
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: MenuBarController?
+
+    static func main() {
+        let application = NSApplication.shared
+        let delegate = AppDelegate()
+        application.delegate = delegate
+        withExtendedLifetime(delegate) {
+            application.run()
+        }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         controller = MenuBarController()
-    }
-
-}
-
-@main
-struct ScreenOffApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-
-    var body: some Scene {
-        Settings { EmptyView() }
     }
 }
