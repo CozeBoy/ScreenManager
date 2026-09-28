@@ -33,12 +33,18 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          for name in APPLE_CERTIFICATE_P12_BASE64 APPLE_CERTIFICATE_PASSWORD MACOS_KEYCHAIN_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
-            if [[ -z "${!name}" ]]; then
-              echo "缺少 GitHub Actions Secret：$name。Release 必须先完成 Developer ID 签名和 Apple 公证。" >&2
-              exit 1
-            fi
-          done
+          missing=()
+          [[ -n "$APPLE_CERTIFICATE_P12_BASE64" ]] || missing+=(APPLE_CERTIFICATE_P12_BASE64)
+          [[ -n "$APPLE_CERTIFICATE_PASSWORD" ]] || missing+=(APPLE_CERTIFICATE_PASSWORD)
+          [[ -n "$MACOS_KEYCHAIN_PASSWORD" ]] || missing+=(MACOS_KEYCHAIN_PASSWORD)
+          [[ -n "$APPLE_ID" ]] || missing+=(APPLE_ID)
+          [[ -n "$APPLE_APP_SPECIFIC_PASSWORD" ]] || missing+=(APPLE_APP_SPECIFIC_PASSWORD)
+          [[ -n "$APPLE_TEAM_ID" ]] || missing+=(APPLE_TEAM_ID)
+          if (( ${#missing[@]} > 0 )); then
+            printf '缺少 GitHub Actions Secrets：%s\n' "${missing[*]}" >&2
+            echo "Release 需要 Developer ID 签名和 Apple 公证凭据。" >&2
+            exit 1
+          fi
 
       - name: Build app bundle
         run: bash build_app.sh
