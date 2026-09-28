@@ -35,7 +35,7 @@ jobs:
           name: Screen-Manager-macOS
           path: |
             build/屏幕管理.app
-            build/屏幕管理.dmg
+            build/*.dmg
           if-no-files-found: error
 
   release:
@@ -50,6 +50,18 @@ jobs:
         with:
           name: Screen-Manager-macOS
           path: release-assets
+
+      - name: Normalize DMG filename
+        run: |
+          dmg_path="$(find release-assets -type f -name '*.dmg' -print -quit)"
+          if [[ -z "$dmg_path" ]]; then
+            echo "构建产物中没有找到 DMG 文件" >&2
+            exit 1
+          fi
+          target_path="release-assets/屏幕管理.dmg"
+          if [[ "$dmg_path" != "$target_path" ]]; then
+            mv "$dmg_path" "$target_path"
+          fi
 
       - name: Publish GitHub Release
         env:
