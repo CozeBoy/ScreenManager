@@ -119,11 +119,13 @@ final class ScreenSleepModel: ObservableObject {
         isScreenLocked = Self.readScreenLockedState()
         refresh()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.refresh() }
+            guard let model = self else { return }
+            Task { @MainActor in model.refresh() }
         }
         observeLockState()
         inactivityTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.checkInactivity() }
+            guard let model = self else { return }
+            Task { @MainActor in model.checkInactivity() }
         }
         if inactivityAutoOffEnabled && lockScreenAutoOff && isScreenLocked {
             hasClosedForCurrentLock = true
@@ -277,15 +279,20 @@ final class ScreenSleepModel: ObservableObject {
             ? localized("将在 1 分钟后关闭显示器")
             : localizedFormat("将在 %ld 分钟后关闭显示器", selectedMinutes)
         countdownTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            guard let model = self else { timer.invalidate(); return }
             Task { @MainActor in
-                guard let self, let remaining = self.countdown else { timer.invalidate(); return }
+                guard let remaining = model.countdown else {
+                    model.countdownTimer?.invalidate()
+                    model.countdownTimer = nil
+                    return
+                }
                 if remaining <= 1 {
-                    timer.invalidate()
-                    self.countdownTimer = nil
-                    self.countdown = nil
-                    self.turnOffDisplayAutomatically()
+                    model.countdownTimer?.invalidate()
+                    model.countdownTimer = nil
+                    model.countdown = nil
+                    model.turnOffDisplayAutomatically()
                 } else {
-                    self.countdown = remaining - 1
+                    model.countdown = remaining - 1
                 }
             }
         }
@@ -381,12 +388,14 @@ final class ScreenSleepModel: ObservableObject {
         let locked = center.addObserver(
             forName: Notification.Name("com.apple.screenIsLocked"), object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.setScreenLocked(true) }
+            guard let model = self else { return }
+            Task { @MainActor in model.setScreenLocked(true) }
         }
         let unlocked = center.addObserver(
             forName: Notification.Name("com.apple.screenIsUnlocked"), object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.setScreenLocked(false) }
+            guard let model = self else { return }
+            Task { @MainActor in model.setScreenLocked(false) }
         }
         lockNotificationTokens = [locked, unlocked]
     }
@@ -474,7 +483,8 @@ final class MenuBarController: NSObject {
             object: NSApp,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.hideApplicationWindows() }
+            guard let appDelegate = self else { return }
+            Task { @MainActor in appDelegate.hideApplicationWindows() }
         }
         workspaceActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification,
@@ -483,12 +493,14 @@ final class MenuBarController: NSObject {
         ) { [weak self] notification in
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
                   app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return }
-            Task { @MainActor in self?.hideApplicationWindows() }
+            guard let appDelegate = self else { return }
+            Task { @MainActor in appDelegate.hideApplicationWindows() }
         }
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         ) { [weak self] _ in
-            Task { @MainActor in self?.hideApplicationWindows() }
+            guard let appDelegate = self else { return }
+            Task { @MainActor in appDelegate.hideApplicationWindows() }
         }
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "display", accessibilityDescription: localized("屏幕管理"))
@@ -1051,9 +1063,9 @@ private final class ProcessInfoWindowController: NSWindowController, NSWindowDel
         )
         window.center()
         languageObserver = languageSettings.$selection.dropFirst().sink { [weak self] _ in
+            guard let view = self else { return }
             Task { @MainActor in
-                guard let self else { return }
-                self.update(hold: self.currentHold)
+                view.update(hold: view.currentHold)
             }
         }
     }
